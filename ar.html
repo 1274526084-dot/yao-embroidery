@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#120e0b">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; object-src 'none'; base-uri 'self'">
+  <title>见纹 · 瑶绣实景</title>
+  <link rel="stylesheet" href="./ar-scene.css"><script src="./ar-config.js"></script>
+</head>
+<body>
+  <main id="app">
+    <header><a href="./#museum" id="back" aria-label="返回数字展馆">‹</a><div><span>瑶绣数字纹样馆</span><b>见纹 · 实景</b></div><button id="exit" hidden aria-label="关闭实景">×</button></header>
+    <section id="welcome">
+      <div class="cover"><img id="source" alt="待扫描的绣片原图"><span>一针一线，来到眼前</span></div>
+      <p class="eyebrow" id="identity">实物绣片</p><h1 id="name">绣片</h1>
+      <p id="intro">打开相机，对准这张完整纹样，让绣片从图面浮起。</p>
+      <button class="primary" id="start" disabled>正在准备…</button>
+      <button class="secondary" id="preview" disabled>先看绣片效果</button>
+      <p class="note">相机仅用于当前设备识别，不拍照、不上传影像。</p>
+      <p class="note" id="record-note" role="status"></p>
+    </section>
+    <section id="experience" hidden>
+      <div id="viewport"><div id="stage"></div><div id="scan-guide" aria-hidden="true"><i></i></div><button id="hotspot" hidden aria-label="打开纹样故事">＋</button><div id="mode-label"></div></div>
+      <div class="experience-footer"><p id="status" role="status">请将纹样完整放入画面</p><div><button id="replay" hidden>重新浮起</button><button id="stop">返回</button></div></div>
+      <article id="story" hidden><button id="close-story" aria-label="收起故事">×</button><p class="eyebrow">针线里的讲述</p><h2 id="story-title"></h2><p id="story-body"></p><a id="detail" href="./#museum">查看数字档案 →</a></article>
+    </section>
+  </main>
+  <script type="module" src="./ar-scene.js"></script>
+</body></html>
