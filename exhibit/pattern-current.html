@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#090807" />
+    <title>瑶绣数字纹样馆｜实体作品档案</title>
+    <script src="./competition-config.js"></script>
+    <style>
+      *{box-sizing:border-box}body{margin:0;background:#090807;color:#f2e4d3;font-family:system-ui,-apple-system,"Noto Sans SC",sans-serif;min-height:100vh;display:grid;place-items:center;padding:20px}.card{width:min(100%,460px);border:1px solid #443229;background:linear-gradient(150deg,#17110e,#0c0908);padding:22px;border-radius:24px;box-shadow:0 28px 80px #0008}.eyebrow{color:#e76642;letter-spacing:.16em;font-size:12px}.image{aspect-ratio:1.35;border-radius:18px;background:#211714 center/cover no-repeat;margin:18px 0;position:relative;overflow:hidden}.image:after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 45px #0006}h1{font-family:serif;font-weight:500;font-size:32px;margin:8px 0}p{line-height:1.75;color:#c9b7aa}.id{display:inline-flex;border:1px solid #6d493b;border-radius:999px;padding:7px 12px;color:#f0b498;font:600 13px ui-monospace,monospace}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}a{display:grid;place-items:center;min-height:48px;border-radius:999px;text-decoration:none;color:#f7eadc;border:1px solid #594237}a:first-child{background:#d85c38;border-color:#d85c38}.state{text-align:center;color:#a99587}.offline{display:none;margin-top:12px;color:#d8a888;font-size:13px}.offline[data-visible="true"]{display:block}
+    </style>
+  </head>
+  <body>
+    <main class="card" aria-live="polite">
+      <p class="eyebrow">瑶绣数字纹样馆 / 实体作品档案</p>
+      <div id="loading" class="state">正在读取当前数字纹样…</div>
+      <article id="record" hidden>
+        <span class="id" id="patternId"></span>
+        <div class="image" id="image" role="img"></div>
+        <h1 id="title"></h1>
+        <p id="intro"></p>
+        <h2>绣制技法</h2><p id="technique"></p>
+        <h2>文化说明</h2>
+        <p id="culture"></p>
+        <h2>相关作品</h2><p id="work"></p>
+        <h2>纹样故事</h2><p id="story"></p>
+        <div class="actions"><a id="detail" href="./#museum">打开完整档案</a><a id="ar" href="./#museum">AR体验</a></div>
+        <div class="actions"><a id="museum" href="./#museum">进入数字展馆</a><a id="three" href="./#workshop">查看3D作品</a></div>
+      </article>
+      <p class="offline" id="offline">暂未取得最新档案，正在显示此设备最近保存的版本。</p>
+    </main>
+    <script>
+      const config=window.__YAO_COMPETITION_CONFIG__||{};
+      const valid=x=>x&&typeof x.patternId==='string'&&/^YX-\d{4}-\d{3,}$/.test(x.patternId)&&x.label&&typeof x.label.intro_cn==='string';
+      const local=()=>{try{const id=localStorage.getItem('yao.collection.current.v2');const list=JSON.parse(localStorage.getItem('yao.collection.records.v2')||'[]');return Array.isArray(list)?list.find(x=>valid(x)&&x.patternId===id):null}catch{return null}};
+      const cached=local();
+      // Respect local corrections and reversible removal without changing the
+      // shared identity, binding, or the record stored by the remote service.
+      const edited=record=>{
+        try {
+          const edits=JSON.parse(localStorage.getItem('yao.collection.edits.v1')||'{}');
+          const edit=edits&&typeof edits==='object'&&!Array.isArray(edits)?edits[record.patternId]:null;
+          if(!edit)return record;
+          const patch=edit.patch||{}, content={};
+          for(const key of ['patternName','technique','image','story','workDescription'])
+            if(typeof patch[key]==='string')content[key]=patch[key];
+          const label=patch.label;
+          if(label&&Object.keys(label).sort().join('|')==='audio_text|culture|intro_cn|intro_en|keywords|title'&&['title','intro_cn','intro_en','culture','audio_text'].every(key=>typeof label[key]==='string')&&Array.isArray(label.keywords)&&label.keywords.every(word=>typeof word==='string'))content.label=label;
+          return {...record,...content,deletedAt:edit.deletedAt||undefined};
+        } catch { return record; }
+      };
+      const text=(id,value)=>document.getElementById(id).textContent=value;
+      const show=(raw,offline=false)=>{
+        const record=edited(raw);
+        if(record.deletedAt){empty('这枚纹样已在此设备移入已删除列表，可在展馆中恢复。');return;}
+        document.getElementById('loading').hidden=true;document.getElementById('record').hidden=false;text('patternId',record.patternId);const image=document.getElementById('image');if(typeof record.image==='string'&&/^(\.\/|https?:\/\/|data:image\/)/.test(record.image))image.style.backgroundImage=`url(${JSON.stringify(record.image)})`;image.setAttribute('aria-label',record.patternName);text('title',record.patternName);text('intro',record.label.intro_cn);text('technique',record.technique||'技法资料待补充');text('culture',record.label.culture||'文化说明待资料确认后补充。');text('work',record.workDescription||'相关作品资料待补充。');text('story',record.story||'尚未收录经确认的故事。');const base=`./?patternId=${encodeURIComponent(record.patternId)}`;document.getElementById('detail').href=base+'#pattern-detail';document.getElementById('ar').href=base+'&ar=1#pattern-detail';document.getElementById('three').href=base+'#workshop';document.getElementById('offline').dataset.visible=String(offline);
+      };
+      const empty=(message='这件作品尚未关联数字档案。')=>{text('loading',message);document.getElementById('loading').hidden=false;document.getElementById('record').hidden=true;const a=document.createElement('a');a.href='./#museum';a.textContent='进入数字展馆';document.querySelector('main').append(a);};
+      // Always revalidate a fixed NFC entrance; a cached previous work must never hide a new binding.
+      async function load(){if(config.archiveApiUrl){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),5000);try{const response=await fetch(`${config.archiveApiUrl.replace(/\/$/,'')}/current`,{cache:'no-store',signal:controller.signal});if(response.status===404){empty();return;}if(!response.ok)throw new Error();const record=await response.json();if(!valid(record))throw new Error();try{const list=JSON.parse(localStorage.getItem('yao.collection.records.v2')||'[]');localStorage.setItem('yao.collection.records.v2',JSON.stringify([...list.filter(x=>x.patternId!==record.patternId),record]));localStorage.setItem('yao.collection.current.v2',record.patternId);}catch{}show(record);return;}catch{if(cached){show(cached,true);return;}}finally{clearTimeout(timer)}}if(cached)show(cached,!navigator.onLine);else empty();}load();
+    </script>
+  </body>
+</html>

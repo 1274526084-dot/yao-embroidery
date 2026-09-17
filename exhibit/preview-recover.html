@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>恢复工作台连接</title>
+<style>
+  body{margin:0;background:#100d0b;color:#f1e5d6;font:17px/1.8 system-ui;min-height:100vh;display:grid;place-items:center}
+  main{max-width:520px;padding:36px}h1{font-size:28px;font-weight:500}p{color:#bfb09e}
+  button,a{display:inline-block;padding:12px 24px;border:0;border-radius:8px;background:#bf572f;color:white;text-decoration:none;font:inherit;cursor:pointer}
+  button:disabled{opacity:.6}small{display:block;margin-top:24px;color:#ac9c8b} [hidden]{display:none}
+</style>
+<main>
+  <h1>恢复工作台连接</h1>
+  <p>仅更新本机的页面程序缓存。你上传的照片、填写的故事和已保存档案不会被清除。</p>
+  <button id="recover">恢复并返回工作台</button>
+  <p id="status" role="status" aria-live="polite"></p>
+  <a id="back" href="./?v=23#photo-lab" hidden>返回工作台</a>
+  <small>此页面只用于本机预览连接维护。</small>
+</main>
+<script>
+  const button=document.getElementById('recover'), status=document.getElementById('status');
+  const local=['localhost','127.0.0.1','[::1]','::1'].includes(location.hostname)||location.hostname.endsWith('.localhost');
+  if(!local){button.hidden=true;status.textContent='请从本机工作台打开此页面。';}
+  const bounded = promise => new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>reject(new Error('timeout')),12000);
+    promise.then(value=>{clearTimeout(timer);resolve(value)},error=>{clearTimeout(timer);reject(error)});
+  });
+  button.onclick=async()=>{
+    button.disabled=true;status.textContent='正在恢复连接，请稍候…';
+    try{
+      await bounded((async()=>{
+        // Update only our exact worker; wait for its activation AND control.
+        // A version handshake prevents navigating while the old cache still owns us.
+        if('serviceWorker' in navigator){
+          const target=new URL('./competition-sw.js',location.href).href;
+          const registration=await navigator.serviceWorker.register(target,{updateViaCache:'none'});
+          await registration.update();
+          await new Promise((resolve,reject)=>{
+            let pending=false;
+            const ports=new Set();
+            const cleanup=()=>{clearInterval(interval);clearTimeout(timer);for(const port of ports)port.close();};
+            const probe=()=>{
+              const controller=navigator.serviceWorker.controller;
+              if(pending||controller?.scriptURL!==target)return;
+              pending=true;
+              const channel=new MessageChannel();ports.add(channel.port1);
+              channel.port1.onmessage=event=>{
+                pending=false;ports.delete(channel.port1);channel.port1.close();
+                if(event.data?.version==='yao-collection-v23'&&event.data.localPreview===true){cleanup();resolve();}
+              };
+              controller.postMessage({type:'yao-preview-version'},[channel.port2]);
+              setTimeout(()=>{pending=false;ports.delete(channel.port1);channel.port1.close();},500);
+            };
+            const interval=setInterval(probe,200);
+            const timer=setTimeout(()=>{cleanup();reject(new Error('worker-not-ready'));},9000);
+            probe();
+          });
+        }
+      })());
+      status.textContent='连接已恢复，正在返回工作台…';
+      location.replace('./?v=23#photo-lab');
+    }catch{
+      status.textContent='本机连接尚未恢复。照片和档案未被清除，请重试。';
+      button.disabled=false;button.textContent='重新打开恢复页';button.onclick=()=>location.reload();
+      document.getElementById('back').hidden=false;
+    }
+  };
+</script>
+</html>
