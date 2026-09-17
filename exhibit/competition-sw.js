@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yao-collection-v43';
+const CACHE_NAME = 'yao-collection-v44';
 // Local previews must never replay development HTML, HMR tokens or TS modules.
 // The downloadable, self-contained HTML remains available for offline practice.
 const LOCAL_PREVIEW = ['localhost', '127.0.0.1', '[::1]', '::1'].includes(self.location.hostname)
@@ -12,14 +12,12 @@ const CORE_ASSETS = [
   './pattern-current.html',
   './desktop.html',
   './nfc.html',
-  './yao-embroidery-texture.png',
-  './carrier-mockups.png',
-  './pan-yao-panwang-seal-digital.jpg',
-  './stitch-hoop-realistic.jpg',
 ];
+// Only cache the small entrance shell on install. Pictures are cached when
+// actually viewed, rather than downloading unrelated multi-megabyte images.
 const readCached = async (request) => {
   const current = await caches.open(CACHE_NAME);
-  return (await current.match(request)) || (await caches.match(request));
+  return current.match(request);
 };
 
 self.addEventListener('install', (event) => {
@@ -51,21 +49,25 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(fetch(event.request).then(response => {
       if(response.ok) { const copy=response.clone(); caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy)); }
       return response;
-    }).catch(async()=> (await readCached(event.request)) || (await readCached(url.pathname.endsWith('pattern-current.html')?'./pattern-current.html':'./')) || new Response('请联网打开一次展馆后再离线访问。',{headers:{'content-type':'text/plain;charset=utf-8'}})));
+    }).catch(async()=> (await readCached(event.request)) || (await readCached(url.pathname.endsWith('pattern-current.html')?'./pattern-current.html':'./')) || (await caches.match(event.request)) || new Response('请联网打开一次展馆后再离线访问。',{headers:{'content-type':'text/plain;charset=utf-8'}})));
     return;
   }
   event.respondWith(
     readCached(event.request).then((cached) => {
+      // Images/fonts and content-hashed bundles are reused with no background
+      // redownload. Config still refreshes so a cached API setting cannot stick.
+      if (cached && /\.(?:webp|png|jpe?g|svg|gif|woff2?)$/i.test(url.pathname)) return cached;
+      if (cached && /\/assets\/[^/]+-[\w-]+\.(?:js|css)$/.test(url.pathname)) return cached;
       const network = fetch(event.request)
-        .then((response) => {
+        .then(async (response) => {
           if (response.ok && new URL(event.request.url).origin === self.location.origin) {
             const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+            try { await (await caches.open(CACHE_NAME)).put(event.request, copy); } catch {}
           }
           return response;
         })
         .catch(() => cached || new Response('', { status: 503 }));
-      return cached || network;
+      return network;
     }),
   );
 });
