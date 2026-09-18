@@ -47,7 +47,7 @@
               const channel=new MessageChannel();ports.add(channel.port1);
               channel.port1.onmessage=event=>{
                 pending=false;ports.delete(channel.port1);channel.port1.close();
-                if(event.data?.version==='yao-collection-v49'&&event.data.localPreview===true){cleanup();resolve();}
+                if(event.data?.version==='yao-collection-v50'&&event.data.localPreview===true){cleanup();resolve();}
               };
               controller.postMessage({type:'yao-preview-version'},[channel.port2]);
               setTimeout(()=>{pending=false;ports.delete(channel.port1);channel.port1.close();},500);
