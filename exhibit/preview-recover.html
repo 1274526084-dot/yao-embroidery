@@ -15,7 +15,7 @@
   <p>仅更新本机的页面程序缓存。你上传的照片、填写的故事和已保存档案不会被清除。</p>
   <button id="recover">恢复并返回工作台</button>
   <p id="status" role="status" aria-live="polite"></p>
-  <a id="back" href="./?entry=desktop&amp;v=46#workbench" hidden>返回工作台</a>
+  <a id="back" href="./?entry=desktop&amp;v=53#workbench" hidden>返回工作台</a>
   <small>此页面只用于本机预览连接维护。</small>
 </main>
 <script>
@@ -47,7 +47,7 @@
               const channel=new MessageChannel();ports.add(channel.port1);
               channel.port1.onmessage=event=>{
                 pending=false;ports.delete(channel.port1);channel.port1.close();
-                if(event.data?.version==='yao-collection-v52'&&event.data.localPreview===true){cleanup();resolve();}
+                if(event.data?.version==='yao-collection-v53'&&event.data.localPreview===true){cleanup();resolve();}
               };
               controller.postMessage({type:'yao-preview-version'},[channel.port2]);
               setTimeout(()=>{pending=false;ports.delete(channel.port1);channel.port1.close();},500);
@@ -59,7 +59,7 @@
         }
       })());
       status.textContent='连接已恢复，正在返回工作台…';
-      location.replace('./?entry=desktop&v=46#workbench');
+      location.replace('./?entry=desktop&v=53#workbench');
     }catch{
       status.textContent='本机连接尚未恢复。照片和档案未被清除，请重试。';
       button.disabled=false;button.textContent='重新打开恢复页';button.onclick=()=>location.reload();
