@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yao-collection-v55';
+const CACHE_NAME = 'yao-collection-v56';
 // Local previews must never replay development HTML, HMR tokens or TS modules.
 // The downloadable, self-contained HTML remains available for offline practice.
 const LOCAL_PREVIEW = ['localhost', '127.0.0.1', '[::1]', '::1'].includes(self.location.hostname)
