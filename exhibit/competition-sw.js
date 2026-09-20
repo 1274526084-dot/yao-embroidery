@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yao-collection-v57';
+const CACHE_NAME = 'yao-collection-v58';
 // Local previews must never replay development HTML, HMR tokens or TS modules.
 // The downloadable, self-contained HTML remains available for offline practice.
 const LOCAL_PREVIEW = ['localhost', '127.0.0.1', '[::1]', '::1'].includes(self.location.hostname)
@@ -27,9 +27,9 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    // Preserve deployed offline bundles until a complete newer bundle is cached.
-    // Only the broken local development cache needs immediate removal.
-    caches.keys().then((keys) => Promise.all(keys.filter((key) => LOCAL_PREVIEW && ownCache(key)).map((key) => caches.delete(key))))
+    // Install has already cached the new entrance shell. Retire old exhibition
+    // caches so phones do not keep several generations of large images.
+    caches.keys().then((keys) => Promise.all(keys.filter((key) => ownCache(key) && key !== CACHE_NAME).map((key) => caches.delete(key))))
       .then(() => self.clients.claim()),
   );
 });
